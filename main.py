@@ -26,6 +26,11 @@ async def validate_and_handle_errors(request: Request, call_next):
             content={"error": "Payload too large"},
         )
 
+    async def receive() -> dict:
+        return {"type": "http.request", "body": body}
+
+    request._receive = receive
+
     try:
         response = await call_next(request)
     except RequestValidationError as exc:
@@ -38,12 +43,13 @@ async def validate_and_handle_errors(request: Request, call_next):
             status_code=exc.status_code,
             content={"error": exc.detail},
         )
-    except Exception as exc:
+    except Exception:
         logger.exception("Unexpected error:")
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={"error": "Internal server error"},
         )
+
     return response
 
 
